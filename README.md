@@ -1,6 +1,6 @@
 # ProgressFlow
 
-**Progress-aware long-horizon manipulation demo** (inspired by PALM).
+**Progress-aware long-horizon manipulation demo**, inspired by [PALM](https://plan-lab.github.io/projects/palm/).
 
 Franka Panda · Table · 3 Cubes · 3 Target Zones · Language Instruction · Progress State · Evaluation
 
@@ -13,7 +13,7 @@ Franka Panda · Table · 3 Cubes · 3 Target Zones · Language Instruction · Pr
 
 Language-conditioned robot policies often fail on **long-horizon** instructions because they lack an explicit notion of *where they are* in a multi-step plan.
 
-**PALM**-style systems emphasize **progress-aware** reasoning over subtasks. ProgressFlow turns that idea into a minimal, reproducible demo:
+This demo is inspired by **[PALM: Progress-Aware Policy Learning via Affordance Reasoning for Long-Horizon Robotic Manipulation](https://plan-lab.github.io/projects/palm/)** (CVPR 2026). PALM emphasizes **progress-aware** reasoning over subtasks; ProgressFlow turns that idea into a minimal, reproducible teaching demo:
 
 | Without progress | With Progress Manager |
 | --- | --- |
@@ -21,7 +21,7 @@ Language-conditioned robot policies often fail on **long-horizon** instructions 
 | Opaque success/fail | Interpretable subtask states |
 | Hard to debug | HUD shows current target & phase |
 
-We intentionally use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. Learned progress prediction is left as Future Work.
+We intentionally use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. Learned progress prediction is left as Future Work. For the full method, see the [PALM project page](https://plan-lab.github.io/projects/palm/).
 
 ---
 
