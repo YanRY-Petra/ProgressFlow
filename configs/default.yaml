@@ -1,0 +1,45 @@
+# ProgressFlow default configuration
+
+task:
+  name: sequential_color_sort
+  robot: Franka Panda
+  platform: isaac_lab  # isaac_lab | sim
+  instruction: >
+    Move the red cube to the red box.
+    Then move the blue cube to the blue box.
+    Finally move the green cube to the green box.
+
+scene:
+  table: true
+  cubes:
+    - {name: red_cube, color: red}
+    - {name: blue_cube, color: blue}
+    - {name: green_cube, color: green}
+  zones:
+    - {name: red_area, color: red}
+    - {name: blue_area, color: blue}
+    - {name: green_area, color: green}
+
+progress:
+  type: rule_based   # future: learned
+  phases: [observe, pick, transport, place, update, done]
+  success_progress: 1.0
+
+policy:
+  default: progress_aware
+  baseline_confusion_rate: 0.40
+
+evaluation:
+  episodes: 30
+  max_steps: 60
+  metrics:
+    - task_success_rate
+    - average_completion
+    - wrong_pick
+    - repeated_pick
+    - completion_time
+
+visualization:
+  show_instruction: true
+  show_progress_bar: true
+  show_current_target: true

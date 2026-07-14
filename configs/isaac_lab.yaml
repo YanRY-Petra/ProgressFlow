@@ -1,0 +1,45 @@
+# Isaac Lab deployment for ProgressFlow sequential pick-and-place
+
+isaac_lab:
+  env_id: ProgressFlow-SequentialPickPlace-Franka-v0
+  robot: Franka-Panda-HighPD
+  control: ik_abs          # ik_abs | joint_pos
+  num_envs: 1
+  device: cuda:0
+  episode_length_s: 120.0
+
+scene:
+  table: SeattleLabTable
+  cubes:
+    red_cube:   {usd: Props/Blocks/red_block.usd,   pos: [0.45, -0.20, 0.0203]}
+    blue_cube:  {usd: Props/Blocks/blue_block.usd,  pos: [0.55, -0.20, 0.0203]}
+    green_cube: {usd: Props/Blocks/green_block.usd, pos: [0.65, -0.20, 0.0203]}
+  zones:
+    red_area:   {size: [0.14, 0.14, 0.004], pos: [0.45, 0.25, 0.002], collision: false}
+    blue_area:  {size: [0.14, 0.14, 0.004], pos: [0.55, 0.25, 0.002], collision: false}
+    green_area: {size: [0.14, 0.14, 0.004], pos: [0.65, 0.25, 0.002], collision: false}
+
+controller:
+  type: PickPlaceController
+  pre_grasp_height: 0.15
+  grasp_height: 0.03
+  transport_height: 0.18
+  place_height: 0.04
+  settle_steps: 8
+  zone_xy_thresh: 0.07
+
+recording:
+  enable: true
+  fps: 30
+  resolution: [1280, 720]
+  output: demo.mp4
+
+hud:
+  top_left: instruction
+  top_right: progress
+  bottom: current_target
+
+launch:
+  scene_smoke: ./isaaclab.sh -p scripts/run_isaac_lab_scene.py --mode scene
+  demo: ./isaaclab.sh -p scripts/run_isaac_lab_scene.py --mode demo
+  baseline: ./isaaclab.sh -p scripts/run_isaac_lab_scene.py --mode baseline

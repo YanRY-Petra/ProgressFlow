@@ -1,0 +1,5 @@
+# ProgressFlow — minimal deps for the TableTopSim demo / evaluation.
+# Isaac Lab / Isaac Sim are optional and installed separately.
+
+pyyaml>=6.0
+Pillow>=10.0.0
