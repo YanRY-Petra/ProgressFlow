@@ -7,6 +7,12 @@ Franka Panda · Table · 3 Cubes · 3 Target Zones · Language Instruction · Pr
 > Core idea: long-horizon sequential manipulation is not a single `Observe → Done` step.
 > It is a chain of subtasks with an explicit **progress representation**.
 
+<p align="center">
+  <img src="demo.gif" alt="ProgressFlow long-horizon demo: Red → Blue → Green with progress 0% → 100%" width="860" />
+</p>
+
+<p align="center"><em>Sequential pick-and-place with live progress: 0% → 33% → 66% → 100%</em></p>
+
 ---
 
 ## Motivation
