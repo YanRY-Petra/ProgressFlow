@@ -237,9 +237,3 @@ Results are written to `results/evaluation.md`, `evaluation.json`, `evaluation.c
 - Close the loop with a vision-language policy on Isaac Lab cameras
 - Scale to longer horizons (drawer + rearrange + insert)
 - Domain randomization & multi-env throughput in Isaac Lab
-
----
-
-## Citation / Course Note
-
-ProgressFlow is a teaching-oriented demo connecting **long-horizon manipulation** with **explicit progress state**, intended as a lightweight companion idea to progress-aware methods such as PALM.
