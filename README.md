@@ -13,7 +13,7 @@ Franka Panda · Table · 3 Cubes · 3 Target Zones · Language Instruction · Pr
 
 Language-conditioned robot policies often fail on **long-horizon** instructions because they lack an explicit notion of *where they are* in a multi-step plan.
 
-This demo is inspired by **[PALM: Progress-Aware Policy Learning via Affordance Reasoning for Long-Horizon Robotic Manipulation](https://plan-lab.github.io/projects/palm/)** (CVPR 2026). PALM emphasizes **progress-aware** reasoning over subtasks; ProgressFlow turns that idea into a minimal, reproducible teaching demo:
+[PALM](https://plan-lab.github.io/projects/palm/) emphasizes **progress-aware** reasoning over subtasks. ProgressFlow turns that idea into a minimal, reproducible teaching demo:
 
 | Without progress | With Progress Manager |
 | --- | --- |
@@ -21,7 +21,7 @@ This demo is inspired by **[PALM: Progress-Aware Policy Learning via Affordance 
 | Opaque success/fail | Interpretable subtask states |
 | Hard to debug | HUD shows current target & phase |
 
-We intentionally use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. Learned progress prediction is left as Future Work. For the full method, see the [PALM project page](https://plan-lab.github.io/projects/palm/).
+I use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. Learned progress prediction is left as Future Work.
 
 ---
 
