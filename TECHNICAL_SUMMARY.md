@@ -37,10 +37,12 @@ Progress-aware control is expected to approach **~1.0 success** with **near-zero
 
 ## Limitations
 
-- Progress is rule-based, not learned from video/language.
+- Teaching demo progress is rule-based, not learned from video/language.
 - TableTopSim abstracts contact-rich control; Isaac Lab path uses scripted abs-IK primitives (not a trained RL policy).
 - Running the Isaac Lab scene requires a local Isaac Lab / Isaac Sim install and Nucleus assets.
-
+- The PALM-on-LIBERO MVP uses simulation GT for affordance labels (not DINO/SAM) and a simplified diffusion MLP (not full DiT).
 ## Next Steps
 
-Replace `ProgressManager` updates with a learned progress predictor; keep the same interfaces for policy, HUD, and evaluation.
+- **Rule-based path (this repo’s teaching demo):** keep `ProgressManager` + TableTopSim / Isaac Lab scripted control.
+- **Learned path (experimental):** top-level `palm/` implements a Phase-1 PALM-on-LIBERO MVP — Global + Spatial affordance heads, continuous progress prediction, simplified diffusion action decoder, GT annotation from LIBERO demos, two-stage training, and LIBERO-LONG ablations. Artifacts live under `palm/{runs,results,data}`. See README § PALM-on-LIBERO and `palm/requirements.txt`.
+- Phase 2 (not in MVP): Grounding DINO + SAM labels, full DiT-12, unfreeze ViT, broader suites.

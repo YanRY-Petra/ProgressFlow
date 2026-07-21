@@ -27,7 +27,7 @@ Language-conditioned robot policies often fail on **long-horizon** instructions 
 | Opaque success/fail | Interpretable subtask states |
 | Hard to debug | HUD shows current target & phase |
 
-I use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. Learned progress prediction is left as Future Work.
+I use a **rule-based Progress Manager** (no neural net) so the demo stays clear for teaching / course projects. A learned PALM-on-LIBERO path lives in `palm/` (sibling package; see below).
 
 ---
 
@@ -142,20 +142,20 @@ ProgressFlow/
 ├── scripts/
 │   ├── make_demo_gif.py
 │   └── run_isaac_lab_scene.py      # Isaac Lab launcher
-└── progressflow/
-    ├── progress_manager.py
-    ├── task_manager.py
-    ├── evaluation.py
-    ├── policy/
-    ├── viz/
-    └── sim/
-        ├── tabletop.py             # CPU demo backend
-        ├── isaac_lab_env.py        # adapter
-        └── isaac_lab/
-            ├── scene_cfg.py        # Franka + table + 3 cubes + 3 zones
-            ├── env_cfg.py          # ManagerBasedRLEnvCfg
-            ├── mdp.py              # obs / zone success
-            └── controller.py       # Action → abs IK pick-place
+├── progressflow/                   # rule-based teaching demo
+│   ├── progress_manager.py
+│   ├── task_manager.py
+│   ├── evaluation.py
+│   ├── policy/
+│   ├── viz/
+│   └── sim/
+└── palm/                           # learned PALM-on-LIBERO (sibling)
+    ├── model/ data/ train/ eval/
+    ├── configs/ scripts/
+    ├── requirements.txt
+    ├── data/annotations/           # GT labels
+    ├── runs/                       # checkpoints
+    └── results/                    # ablations
 ```
 
 ---
@@ -203,17 +203,17 @@ Control defaults to **absolute differential IK** (`ik_abs`) with `FRANKA_PANDA_H
 
 ## Evaluation
 
-We do not only ship a video — we compare:
+We compare under **shared decision noise** (same `confusion` / `forget` wrapper on both methods):
 
-- **Baseline**: no progress memory (myopic heuristics → wrong / repeated picks)
+- **Baseline**: follows the static prompt plan + world state (no Progress Manager)
 - **Progress-aware**: consults Progress Manager every step
 
-Run `python main.py eval --episodes 30` to refresh `results/evaluation.md`. Current numbers:
+The only intentional difference is whether Progress Manager is used. Run `python main.py eval --episodes 30` to refresh `results/evaluation.md`. Current numbers (`confusion=0.45`, `forget=0.22`):
 
 | Method | Success Rate | Avg Completion | Wrong Pick | Repeated Pick | Avg Steps |
 | --- | --- | --- | --- | --- | --- |
-| baseline | 0.03 | 0.30 | 19.23 | 37.33 | 58.9 |
-| progress_aware | **1.00** | **1.00** | **0.00** | **0.00** | **15.0** |
+| baseline | 0.33 | 0.53 | 34.47 | 55.67 | 70.7 |
+| progress_aware | **0.67** | **0.79** | **15.23** | **22.80** | **41.5** |
 
 Metrics:
 
@@ -243,3 +243,43 @@ Results are written to `results/evaluation.md`, `evaluation.json`, `evaluation.c
 - Close the loop with a vision-language policy on Isaac Lab cameras
 - Scale to longer horizons (drawer + rearrange + insert)
 - Domain randomization & multi-env throughput in Isaac Lab
+
+---
+
+## PALM-on-LIBERO (experimental)
+
+Phase-1 MVP of a **learned** affordance + progress policy, living in top-level `palm/` alongside the rule-based teaching demo (does not replace `TableTopSim`).
+
+| Paper | This MVP |
+| --- | --- |
+| 4 affordances + progress | **Global + Spatial** + progress |
+| Multi-dataset pretrain | Train on **LIBERO** demos |
+| Real xArm | **LIBERO-LONG** sim eval |
+
+Package: `palm/` · config: `palm/configs/palm_libero.yaml` · deps: `palm/requirements.txt`  
+All PALM artifacts stay under `palm/` (`runs/`, `results/`, `data/annotations/`).
+
+```bash
+pip install -r palm/requirements.txt
+# Optional: install LIBERO and demos
+python palm/scripts/download_libero.py --libero-root /path/to/LIBERO --task-suite libero_long
+export LIBERO_DEMO_ROOT=/path/to/datasets
+
+# GT affordance / progress labels (or --synthetic for smoke data)
+python palm/scripts/annotate_libero_gt.py --synthetic
+
+# Offline CPU smoke (tiny model, synthetic data)
+python palm/scripts/smoke_test_palm.py
+python -m palm.train.train_baseline --offline
+python -m palm.train.train_palm --offline --resume palm/runs/baseline_last.pt
+python -m palm.eval.ablations --offline --checkpoint palm/runs/palm_last.pt
+
+# Full two-stage train + ablations (needs GPU + LIBERO demos)
+bash palm/scripts/train_palm.sh --synthetic   # or omit --synthetic when demos are ready
+```
+
+Ablations written to `palm/results/palm_libero_long.{md,json,csv}`:
+
+1. **baseline** — action BC only  
+2. **affordance** — + Global/Spatial heads  
+3. **affordance_progress** — + progress-threshold subtask gating  
