@@ -109,7 +109,7 @@ def run_scene_smoke(args: argparse.Namespace) -> None:
 
 
 def run_policy_demo(args: argparse.Namespace, use_progress: bool) -> None:
-    from progressflow.policy import BaselinePolicy, ProgressAwarePolicy
+    from progressflow.policy import BaselinePolicy, DecisionNoiseWrapper, ProgressAwarePolicy
     from progressflow.sim.isaac_lab_env import IsaacLabConfig, IsaacLabEnvAdapter
     from progressflow.task_manager import TaskManager
     from progressflow.viz import render_demo_frame
@@ -130,7 +130,10 @@ def run_policy_demo(args: argparse.Namespace, use_progress: bool) -> None:
     obs = adapter.reset()
     print(render_demo_frame(obs, "reset"))
 
-    policy = ProgressAwarePolicy() if use_progress else BaselinePolicy(confusion_rate=0.45)
+    base = ProgressAwarePolicy() if use_progress else BaselinePolicy()
+    policy = DecisionNoiseWrapper(
+        base=base, confusion_rate=0.45, forget_rate=0.22, _rng_seed=7
+    )
     policy.reset()
 
     done = False

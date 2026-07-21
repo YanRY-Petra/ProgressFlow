@@ -1,5 +1,6 @@
 """
-Evaluation: Baseline (no progress) vs Progress-aware.
+Evaluation: Baseline (prompt-only) vs Progress-aware,
+under the *same* decision-side noise.
 
 Metrics
 -------
@@ -18,9 +19,13 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .policy import BaselinePolicy, ProgressAwarePolicy
+from .policy import BaselinePolicy, DecisionNoiseWrapper, ProgressAwarePolicy
 from .sim import SimConfig, TableTopSim
 from .task_manager import DEFAULT_INSTRUCTION, TaskManager
+
+# Shared decision noise (identical for both methods).
+DEFAULT_CONFUSION = 0.45
+DEFAULT_FORGET = 0.22
 
 
 @dataclass
@@ -39,18 +44,22 @@ class AggregateMetrics:
 
 def run_evaluation(
     n_episodes: int = 20,
-    max_steps: int = 60,
+    max_steps: int = 80,
     instruction: str = DEFAULT_INSTRUCTION,
     seed0: int = 0,
+    confusion_rate: float = DEFAULT_CONFUSION,
+    forget_rate: float = DEFAULT_FORGET,
 ) -> dict[str, AggregateMetrics]:
+    """
+    Fair ablation:
+      - same decision noise (confusion/forget) on both methods
+      - only difference: ProgressManager vs prompt-only baseline
+    """
     task_manager = TaskManager(instruction)
-    methods = {
-        "baseline": BaselinePolicy(confusion_rate=0.40),
-        "progress_aware": ProgressAwarePolicy(),
-    }
+    method_names = ("baseline", "progress_aware")
     aggregates: dict[str, AggregateMetrics] = {}
 
-    for name, policy in methods.items():
+    for name in method_names:
         successes = 0
         completions = 0.0
         wrong = 0.0
@@ -63,10 +72,14 @@ def run_evaluation(
                 task_manager,
                 SimConfig(max_steps=max_steps, seed=seed0 + ep * 17),
             )
-            # Give baseline a reproducible confusion seed per episode.
-            if isinstance(policy, BaselinePolicy):
-                policy = BaselinePolicy(confusion_rate=0.55, forget_rate=0.30)
-                policy._rng_seed = seed0 + ep * 31
+            # Same noise seed schedule for both methods at episode ep.
+            base = BaselinePolicy() if name == "baseline" else ProgressAwarePolicy()
+            policy = DecisionNoiseWrapper(
+                base=base,
+                confusion_rate=confusion_rate,
+                forget_rate=forget_rate,
+            )
+            policy._rng_seed = seed0 + ep * 31
             result = sim.run_episode(policy, use_progress=use_progress)
             successes += int(result.success)
             completions += result.completed_subtasks / max(result.total_subtasks, 1)
@@ -137,7 +150,11 @@ def save_results(
 
     md_path = out / "evaluation.md"
     md_path.write_text(
-        "# ProgressFlow Evaluation\n\n" + metrics_to_markdown(metrics) + "\n",
+        "# ProgressFlow Evaluation\n\n"
+        "Same decision noise on both methods "
+        f"(confusion={DEFAULT_CONFUSION}, forget={DEFAULT_FORGET}).\n\n"
+        + metrics_to_markdown(metrics)
+        + "\n",
         encoding="utf-8",
     )
     return json_path

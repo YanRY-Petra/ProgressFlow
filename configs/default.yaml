@@ -21,17 +21,21 @@ scene:
     - {name: green_area, color: green}
 
 progress:
-  type: rule_based   # future: learned
+  type: rule_based   # learned path: see palm/ (PALM-on-LIBERO)
   phases: [observe, pick, transport, place, update, done]
   success_progress: 1.0
 
 policy:
   default: progress_aware
-  baseline_confusion_rate: 0.40
+  # Shared decision noise applied to BOTH baseline and progress_aware.
+  decision_noise:
+    confusion_rate: 0.45
+    forget_rate: 0.22
 
 evaluation:
   episodes: 30
-  max_steps: 60
+  max_steps: 80
+  # Shared decision noise on BOTH methods (see policy.decision_noise).
   metrics:
     - task_success_rate
     - average_completion

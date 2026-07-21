@@ -19,9 +19,10 @@ import argparse
 import json
 import time
 from pathlib import Path
+from typing import Any
 
 from progressflow.evaluation import metrics_to_markdown, run_evaluation, save_results
-from progressflow.policy import BaselinePolicy, ProgressAwarePolicy
+from progressflow.policy import BaselinePolicy, DecisionNoiseWrapper, ProgressAwarePolicy
 from progressflow.sim import SimConfig, TableTopSim
 from progressflow.task_manager import DEFAULT_INSTRUCTION, TaskManager
 from progressflow.viz import render_demo_frame
@@ -29,6 +30,20 @@ from progressflow.viz import render_demo_frame
 
 ROOT = Path(__file__).resolve().parent
 
+# Demo uses the same shared decision noise as evaluation.
+DEMO_CONFUSION = 0.45
+DEMO_FORGET = 0.22
+
+
+def _demo_policy(policy_name: str) -> tuple[Any, bool]:
+    base = BaselinePolicy() if policy_name == "baseline" else ProgressAwarePolicy()
+    policy = DecisionNoiseWrapper(
+        base=base,
+        confusion_rate=DEMO_CONFUSION,
+        forget_rate=DEMO_FORGET,
+        _rng_seed=7,
+    )
+    return policy, policy_name != "baseline"
 
 def run_demo(
     backend: str = "sim",
@@ -61,13 +76,7 @@ def run_demo(
     print()
 
     sim = TableTopSim(task_manager, SimConfig(max_steps=max_steps, seed=7))
-    if policy_name == "baseline":
-        policy = BaselinePolicy(confusion_rate=0.45)
-        use_progress = False
-    else:
-        policy = ProgressAwarePolicy()
-        use_progress = True
-
+    policy, use_progress = _demo_policy(policy_name)
     obs = sim.reset()
     print(render_demo_frame(obs, action_kind="reset"))
     print("\n--- starting long-horizon execution ---\n")
@@ -115,12 +124,7 @@ def _run_isaac_adapter_demo(
 
     obs = adapter.reset()
     print(_render(obs, "reset"))
-    policy = (
-        BaselinePolicy(confusion_rate=0.45)
-        if policy_name == "baseline"
-        else ProgressAwarePolicy()
-    )
-    use_progress = policy_name != "baseline"
+    policy, use_progress = _demo_policy(policy_name)
     policy.reset()
     done = False
     steps = 0

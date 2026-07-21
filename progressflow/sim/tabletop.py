@@ -90,6 +90,7 @@ class TableTopSim:
         self._pick_history: list[str] = []
         self.timeline: list[dict[str, Any]] = []
         self._rng = self.config.seed
+        self._zone_before_grasp: dict[str, str | None] = {}
         self.reset()
 
     def reset(self) -> dict[str, Any]:
@@ -127,6 +128,10 @@ class TableTopSim:
     def get_observation(self) -> dict[str, Any]:
         assert self.progress is not None
         object_in_zone = {n: c.zone for n, c in self.cubes.items()}
+        instruction_plan = [
+            {"object_name": t.object_name, "target_zone": t.target_zone}
+            for t in self.progress.subtasks
+        ]
         return {
             "cubes": {
                 n: {
@@ -144,6 +149,7 @@ class TableTopSim:
             "object_in_zone": object_in_zone,
             "last_placed": self._placed_history[-1] if self._placed_history else None,
             "instruction_order": [t.object_name for t in self.progress.subtasks],
+            "instruction_plan": instruction_plan,
             "progress": self.progress.get_state().to_dict(),
             "step": self.step_count,
         }
@@ -239,13 +245,23 @@ class TableTopSim:
             return
         if self._rand() > self.config.grasp_success_prob:
             return
-        # Release previous if any.
+        # Release previous if any — restore its zone if we abandoned a mid-hold grasp
+        # (keeps decision-noise "touch and leave" from permanently undoing places).
         if self.grasped and self.grasped in self.cubes:
-            self.cubes[self.grasped].grasped = False
+            prev = self.cubes[self.grasped]
+            prev.grasped = False
+            saved = self._zone_before_grasp.get(self.grasped)
+            if prev.zone is None and saved is not None:
+                prev.zone = saved
+                zone = self.zones.get(saved)
+                if zone:
+                    prev.position = (zone.position[0], zone.position[1], 0.05)
         for c in self.cubes.values():
             c.grasped = False
-        self.cubes[object_name].grasped = True
-        self.cubes[object_name].zone = None
+        cube = self.cubes[object_name]
+        self._zone_before_grasp[object_name] = cube.zone
+        cube.grasped = True
+        cube.zone = None
         self.grasped = object_name
 
     def _do_place(self, object_name: str, target_zone: str | None) -> None:
